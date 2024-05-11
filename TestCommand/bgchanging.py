@@ -48,13 +48,13 @@ def main(args):
 
     # Get image
     input_url = args.input_path
-    image = cv2.imread(input_url)
+    image = Image.open(input_url)
     prompt = args.prompt
     negative_prompt = args.negative_prompt
 
     output_final = bgChanging(image, prompt, negative_prompt)
 
-    cv2.imwrite(output_final_url, output_final)
+    output_final.save(output_final_url)
 
 
 if __name__ == "__main__":

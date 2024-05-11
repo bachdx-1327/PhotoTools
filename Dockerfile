@@ -1,35 +1,26 @@
-FROM nvidia/cuda:11.8.0-devel-ubuntu22.04
+FROM ubuntu:20.04
 
-ENV PYTHONUNBUFFERED=1 
+# set environment for location and language
+ENV DEBIAN_FRONTEND=noninteractive
+# environment variables for asia Ho Chi Minh
+ENV TZ=Asia/Ho_Chi_Minh
 
-# SYSTEM
-RUN apt-get update --yes --quiet && DEBIAN_FRONTEND=noninteractive apt-get install --yes --quiet --no-install-recommends \
-    software-properties-common \
-    build-essential apt-utils \
-    wget curl vim git ca-certificates kmod \
-    nvidia-driver-525 \
-    && rm -rf /var/lib/apt/lists/*
+# update and install dependencies
+RUN apt-get update -y 
+# install python 3.9.16 and pip
+RUN apt-get install -y python3.9 python3-pip python3.9-dev build-essential
+# add python3.9 to alternatives
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1
+# install python dependencies
+RUN --mount=type=cache,target=/root/.cache/pip pip3 install --upgrade pip
 
-# PYTHON 3.10
-RUN add-apt-repository --yes ppa:deadsnakes/ppa && apt-get update --yes --quiet
-RUN DEBIAN_FRONTEND=noninteractive apt-get install --yes --quiet --no-install-recommends \
-    python3.10 \
-    python3.10-dev \
-    python3.10-distutils \
-    python3.10-lib2to3 \
-    python3.10-gdbm \
-    python3.10-tk \
-    pip
+# copy all folders and files to /app
+WORKDIR /app
+COPY . /app
 
-RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 999 \
-    && update-alternatives --config python3 && ln -s /usr/bin/python3 /usr/bin/python
+# install python dependencies
+RUN pip3 install -r requirements.txt
+# RUN pip3 install torch==1.13.0+cu116 torchvision==0.14.0+cu116 -f https://download.pytorch.org/whl/torch_stable.html
 
-RUN pip install --upgrade pip
-
-COPY requirements.txt /tmp/requirements.txt
-
-RUN pip install -r /tmp/requirements.txt
-
-COPY . . 
-
-CMD ["uvicorn", "app.main:app", "--proxy-headers", "--host", "0.0.0.0", "--port", "80"]
+# install git and some dependencies
+RUN apt-get update && apt-get install -y git libgl1-mesa-glx libglib2.0-dev
